@@ -1,0 +1,36 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+canvas {
+  display: block;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.slider-container {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.slider-item {
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+  margin-bottom: 10px;
+}
+
+.slider-item label {
+  margin-right: 10px;
+  min-width: 50px;
+}
+
+.slider-item input[type="range"] {
+  width: 150px;
+  margin-right: 10px;
+}
