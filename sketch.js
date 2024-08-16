@@ -2,31 +2,14 @@
 // copoied and pasted form nextork.js
 // new neuralNetwork(2, 3, 2);
 // 2 inputs, 6, weights, 6 weights, 2 outputs, 5 biases
-const graphWidth = 954;
-const graphHeight = 476;
 
-function normalizeX(input) {
-  const normalized = input / (graphWidth / 2);
-
-  return normalized;
-}
-
-function normalizeY(input) {
-  const normalized = input / (graphHeight / 2);
-
-  return normalized;
-}
-
-let safePoints;
-let unsafePoints;
+let safeGraphPoints;
+let unsafeGraphPoints;
 
 function preload() {
-  safePoints = loadJSON("./safepoints.json");
-  unsafePoints = loadJSON("./unsafepoints.json");
+  safeGraphPoints = loadJSON("./safepoints.json");
+  unsafeGraphPoints = loadJSON("./unsafepoints.json");
 }
-
-const neuralnetwork = new NeuralNetwork(2, 3, 2);
-const inputs = [0.4, 0.2];
 
 function setup() {
   createCanvas(graphWidth, graphHeight);
@@ -52,13 +35,22 @@ function draw() {
 
       const output = neuralnetwork.classify([normalizedX, normalizedY]);
 
+      const calcoutput = neuralnetwork.CalcOutputs([normalizedX, normalizedY])
+
+      let calculated_cost = 0;
+      
+      calculated_cost += neuralnetwork.pointCost(calcoutput[0], calcoutput[1], output)
+      // cost is inserted here
+      costLabel.textContent = `Cost: ${calculated_cost}`
+
+
       let index = (x + y * width) * 4;
       if (output === 0) {
         pixels[index] = 0;
         pixels[index + 1] = 0;
-        pixels[index + 2] = 255; // blue
+        pixels[index + 2] = 255; // blue safe
       } else {
-        pixels[index] = 255; // red
+        pixels[index] = 255; // red unsafe
         pixels[index + 1] = 0;
         pixels[index + 2] = 0;
       }
@@ -69,7 +61,7 @@ function draw() {
   updatePixels();
 
   for (let i = 0; i < 49; i++) {
-    const point = safePoints[i];
+    const point = safeGraphPoints[i];
     const x = point.x;
     const y = point.y;
 
@@ -81,7 +73,7 @@ function draw() {
   }
 
   for (let i = 0; i < 49; i++) {
-    const point = unsafePoints[i];
+    const point = unsafeGraphPoints[i];
     const x = point.x;
     const y = point.y;
 

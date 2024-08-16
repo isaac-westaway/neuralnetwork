@@ -2,3 +2,9 @@ A simple feedforward application which creates a neural network structure and pa
 
 Will implement non-linear activation
 Will implement backpropogation to "learn" of a decision boundary
+
+facts:
+
+uses cross-entropy loss function
+
+uses softmax
