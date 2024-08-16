@@ -25,22 +25,6 @@ async function fetchPoints(points) {
     return body;
 }
 
-class DataPoint {
-    constructor(x, y, label, numLabels) {
-        this.x = x;
-        this.y = y;
-        this.label = label;
-        this.expectedOutputs = this.createOneHot(label, numLabels);
-    }
-
-    createOneHot(index, num) {
-        const oneHot = new Array(num).fill(0);
-        oneHot[index] = 1;
-        return oneHot;
-    }
-}
-
-
 class Layer {
     number_of_nodes_into_the_layer = 0;
     number_of_outgoing_nodes = 0;
@@ -200,7 +184,6 @@ class NeuralNetwork {
     layers = [];
 
     // datapoint type
-    datapoints = [];
 
     // should update to a variadic function, such that it can accept an unlimited amount of hidden layers
     // if this were typescript EVERYTHING would be numbers
@@ -270,8 +253,6 @@ let weighted_unsafePoints = [];
 
 safePoints = fetchPoints('safepoints.json').then(points => {
     const safe_points = points.map(point => {
-        const _point = new DataPoint(normalizeX(point.x), normalizeY(point.y), 0, 2);
-
         const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
         weighted_safePoints.push(classificated);
 
@@ -284,8 +265,6 @@ safePoints = fetchPoints('safepoints.json').then(points => {
 
 unsafePoints = fetchPoints('unsafepoints.json').then(points => {
     const unsafe_points = points.map(point => {
-        const _point = new DataPoint(normalizeX(point.x), normalizeY(point.y), 1, 2);
-
         const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
         weighted_unsafePoints.push(classificated);
 

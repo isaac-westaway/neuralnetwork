@@ -27,8 +27,8 @@ function draw() {
   translate(0, height);
   scale(1, -1);
 
-  for (let x = 0; x < width; x += 3) {
-    for (let y = 0; y < height; y += 1) {
+  for (let x = 0; x < width; x += 4) {
+    for (let y = 0; y < height; y += 2) {
       // normalize width and heights
       const normalizedX = normalizeX(x);
       const normalizedY = normalizeY(y);
@@ -38,7 +38,7 @@ function draw() {
       const calcoutput = neuralnetwork.CalcOutputs([normalizedX, normalizedY])
 
       let calculated_cost = 0;
-      
+
       calculated_cost += neuralnetwork.pointCost(calcoutput[0], calcoutput[1], output)
       // cost is inserted here
       costLabel.textContent = `Cost: ${calculated_cost}`
