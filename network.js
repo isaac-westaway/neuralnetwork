@@ -17,6 +17,31 @@
 let safePoints = [];
 let unsafePoints = [];
 
+let weighted_safePoints = [];
+let weighted_unsafePoints = [];
+
+safePoints = fetchPoints('safepoints.json').then(points => {
+    const safe_points = points.map(point => {
+        const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
+        weighted_safePoints.push(classificated);
+
+        return classificated;
+    });
+    
+    return safe_points;
+});
+
+
+unsafePoints = fetchPoints('unsafepoints.json').then(points => {
+    const unsafe_points = points.map(point => {
+        const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
+        weighted_unsafePoints.push(classificated);
+
+        return classificated;
+    });
+
+    return unsafe_points;
+});
 
 async function fetchPoints(points) {
     const res = await fetch(`https://neuralnetwork-ivory.vercel.app/${points}`)
@@ -248,31 +273,6 @@ class NeuralNetwork {
 // we must pass these datapoints THROUGH the neural network, and save it
 const neuralnetwork = new NeuralNetwork(2, 3, 2);
 
-let weighted_safePoints = [];
-let weighted_unsafePoints = [];
-
-safePoints = fetchPoints('safepoints.json').then(points => {
-    const safe_points = points.map(point => {
-        const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
-        weighted_safePoints.push(classificated);
-
-        return _point;
-    });
-    
-    return safe_points;
-});
-
-
-unsafePoints = fetchPoints('unsafepoints.json').then(points => {
-    const unsafe_points = points.map(point => {
-        const classificated = neuralnetwork.CalcOutputs([normalizeX(point.x), normalizeY(point.y)]);
-        weighted_unsafePoints.push(classificated);
-
-        return _point;
-    });
-
-    return unsafe_points;
-});
 
 // now, when passing the graph x y coordinates through the neural network, the distance from the nearest weighted_safePoint or weighted_unsafePoint depending on 
 // the neuralnetworks choice of classification based upon maxValueIndex() shall be checked.
