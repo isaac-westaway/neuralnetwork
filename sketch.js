@@ -1,5 +1,3 @@
-// hidden and output layers
-// copoied and pasted form nextork.js
 // new neuralNetwork(2, 3, 2);
 // 2 inputs, 6, weights, 6 weights, 2 outputs, 5 biases
 
@@ -27,38 +25,75 @@ function draw() {
   translate(0, height);
   scale(1, -1);
 
-  for (let x = 0; x < width; x += 4) {
-    for (let y = 0; y < height; y += 2) {
-      // normalize width and heights
-      const normalizedX = normalizeX(x);
-      const normalizedY = normalizeY(y);
+  let calculated_cost = 0;
+  let learnrate = 1;
 
-      const output = neuralnetwork.classify([normalizedX, normalizedY]);
+  let x_current = 0;
+  let y_current = 0;
 
-      const calcoutput = neuralnetwork.CalcOutputs([normalizedX, normalizedY])
+  let x_normalized = 0;
+  let y_normalized = 0;
 
-      let calculated_cost = 0;
+  let output = 0;
 
-      calculated_cost += neuralnetwork.pointCost(calcoutput[0], calcoutput[1], output)
-      // cost is inserted here
-      costLabel.textContent = `Cost: ${calculated_cost}`
+  let classified_points = [];
 
-
-      let index = (x + y * width) * 4;
-      if (output === 0) {
-        pixels[index] = 0;
-        pixels[index + 1] = 0;
-        pixels[index + 2] = 255; // blue safe
-      } else {
-        pixels[index] = 255; // red unsafe
-        pixels[index + 1] = 0;
-        pixels[index + 2] = 0;
+  needs_redrawing = true;
+  while (needs_redrawing) {
+    for (let x = 0; x < width; x += 5) {
+      for (let y = 0; y < height; y += 3) {
+        x_current = x;
+        y_current = y;
+  
+        x_normalized = normalizeX(x_current);
+        y_normalized = normalizeY(y_current);
+  
+        classified_points.push({ x, y, x_normalized, y_normalized, output });
       }
-      pixels[index + 3] = 255;
     }
+    needs_redrawing = false;
   }
 
+  classified_points.forEach((point) => {
+    neuralnetwork.learn(
+      point.x_normalized,
+      point.y_normalized,
+      point.output,
+      learnrate
+    );
+    needs_redrawing = true;
+  });
+
+  output = neuralnetwork.classify([x_normalized, y_normalized])
+  
+  // need to make this fire every time the array is re-classified.
+
   updatePixels();
+  classified_points.forEach((point) => {
+    let index = (point.x + point.y * width) * 4;
+    if (output === 0) {
+      pixels[index] = 0;
+      pixels[index + 1] = 0;
+      pixels[index + 2] = 255; // blue safe
+    } else {
+      pixels[index] = 255; // red unsafe
+      pixels[index + 1] = 0;
+      pixels[index + 2] = 0;
+    }
+    pixels[index + 3] = 255;
+
+  });
+
+  const calcoutput = neuralnetwork.CalcOutputs([x_normalized, y_normalized]);
+  calculated_cost += neuralnetwork.pointCost(
+    calcoutput[0],
+    calcoutput[1],
+    output
+  );
+
+  updatePixels();
+
+  costLabel.textContent = `Cost: ${calculated_cost}`;
 
   for (let i = 0; i < 49; i++) {
     const point = safeGraphPoints[i];

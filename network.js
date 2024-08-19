@@ -1,8 +1,3 @@
-// takes in the coordinates in the json arrays of safePoints and unsafePoints and maps it to zero or one.
-
-// new Datapoint(404, 118, 0, 2)
-// we are arbitrarly saying that index 0 is safety and index 1 is unsafey, for example, safe: [1, 0], unsafe: [0, 1]:
-
 // safepoints.json
 // {
 //     "x": 404.1666785693151,
@@ -12,7 +7,6 @@
 // therefore to calculate the cost at this singular datapoint, we perform new Datapoint(x, y, 1, 2);
 // this is because we take the coords of the point, and the safety status of the point, the neural network is most confident that the value at index 1 is the correct answer, and thus subs it in.
 // the nodecost of this value is the expected output (1), and its activation output (0.2698);
-// hmm how should i implement this
 
 let safePoints = [];
 let unsafePoints = [];
@@ -44,22 +38,28 @@ unsafePoints = fetchPoints('unsafepoints.json').then(points => {
 });
 
 async function fetchPoints(points) {
-    const res = await fetch(`https://neuralnetwork-ivory.vercel.app/${points}`)
+    const res = await fetch(`http://localhost:3000/${points}`)
     const body = await res.json();
         
     return body;
 }
 
 class Layer {
+    // number of nodes into the layer is the number of connections of the nodes inside the current layer, for example 2,3 will have 2 nodes and 3 outgoing nodes,
+    // so it will be an array of
     number_of_nodes_into_the_layer = 0;
+
+    // number of nodes in the actual layer, setting to 3 will mean there are 3 nodes
     number_of_outgoing_nodes = 0;
 
       // create a loop to append slider nodes to the DOM.
       // 2D (n-th dimensional, a K-th dimensional input matrix would correspond to a K by 1 hidden layer weight matrix )
     weights = [];
-
     //1D
     biases = [];
+
+    cost_gradientW = [];
+    cost_gradientB = [];
 
     constructor(nodesIn, nodesOut) {
         this.number_of_nodes_into_the_layer = nodesIn;
@@ -67,7 +67,11 @@ class Layer {
 
         this.biases = new Array(nodesOut);
 
+        // weights
         for (let i = 0; i < nodesIn; i++) {
+
+            // for a 2,3,2 matrix, this will take 2 nodes in, and 3 nodes out
+            // this will initialize a [[w11, w12, w13], [w21, w22, w23]] a 2 element array of 3 element arrays
             this.weights[i] = new Array(nodesOut);
             
             for (let j = 0; j < nodesOut; j++) {
@@ -80,7 +84,11 @@ class Layer {
                 }
             }
         }
+        for (let i = 0; i < nodesIn; i++) {
+            this.cost_gradientW[i] = new Array(nodesOut);
+        }
 
+        // biases
         for (let i = 0; i < nodesOut; i++) {
             this.biases[i] = Math.random();
 
@@ -90,73 +98,7 @@ class Layer {
                 biasSlider.value = this.biases[i];
             }
         }
-
-        this.initialize(nodesIn, nodesOut);
-    }
-
-    initialize(nodesIn, nodesOut) {
-        const sliderContainer = document.createElement("div");
-        sliderContainer.classList.add("slider-container");
-        document.body.appendChild(sliderContainer);
-
-        for (let i = 0; i < nodesIn; i++) {
-            for (let j = 0; j < nodesOut; j++) {
-                const container = document.createElement("div");
-                container.classList.add("slider-item");
-
-                const input = document.createElement("input");
-                input.type = "range";
-                input.min = -2;
-                input.max = 2;
-                input.step = 0.001;
-                input.id = `weight-${i}-${j}`;
-
-                const label = document.createElement("label");
-                label.textContent = `w${i}-${j}: ${input.min}`;
-
-                container.appendChild(label);
-                container.appendChild(input);
-                sliderContainer.appendChild(container);
-
-                const after = document.createElement("label");
-                after.textContent = `${input.max}`;
-                container.appendChild(after);
-
-                input.addEventListener("input", (event) => {
-                    this.weights[i][j] = parseFloat(event.target.value);
-                    after.textContent = `${input.max}: ${event.target.value}`;
-                });
-            }
-        }
-
-        // sliders [biases]
-        for (let i = 0; i < this.biases.length; i++) {
-            const container = document.createElement("div");
-            container.classList.add("slider-item");
-
-            const input = document.createElement("input");
-            input.type = "range";
-            input.min = -10;
-            input.max = 10;
-            input.step = 0.001;
-            input.id = `bias-${i}`;
-
-            const label = document.createElement("label");
-            label.textContent = `b${i}: ${input.min}`;
-
-            container.appendChild(label);
-            container.appendChild(input);
-            sliderContainer.appendChild(container);
-
-            const after = document.createElement("label");
-            after.textContent = `${input.max}`;
-            container.appendChild(after);
-
-            input.addEventListener("input", (event) => {
-                this.biases[i] = parseFloat(event.target.value);
-                after.textContent = `${input.max}: ${event.target.value}`;
-            });
-        }
+        this.cost_gradientB = new Array(nodesOut)
     }
 
     // softmax sums to one, it is good for classification, maybe I should read some more about this :-)
@@ -173,7 +115,6 @@ class Layer {
 
     // calc stands for calculate btw
     // takes in an array
-    // activation function enters HERE
     calcOutputs(inputs) {
     // outputs = weights[i] * input[i] + bias (of the current node)
     // the number of weighted outputs corresponds to the number of output nodes (figure 7.2)
@@ -198,19 +139,32 @@ class Layer {
     nodeCost(outputActivation, expectedOutput) {
         return - (expectedOutput * Math.log(outputActivation) + (1 - expectedOutput) * Math.log(1 - outputActivation));
     }
+
+    // nodeCost(outputActivation, expectedOutput) {
+    //     return 0.5 * Math.pow((outputActivation - expectedOutput), 2);
+    // }
+
+    update_gradients(learnrate) {
+        for (let i = 0; i < this.number_of_outgoing_nodes; i++) {
+            this.biases[i] -= this.cost_gradientB[i] * learnrate;
+
+            for (let j = 0; j < this.number_of_nodes_into_the_layer; j++) {
+                this.weights[j][i] -= this.cost_gradientW[j][i] * learnrate;
+            }
+        }
+    }
 }
 
 // new Layer(2,3)
 // [[0,0,0],[0,0,0]]
 //
 
+let needs_redrawing = false;
+
 //interface to communicate with the layer
 class NeuralNetwork {
     layers = [];
 
-    // datapoint type
-
-    // should update to a variadic function, such that it can accept an unlimited amount of hidden layers
     // if this were typescript EVERYTHING would be numbers
     constructor(...layers) {
         this.layers = [];
@@ -228,7 +182,6 @@ class NeuralNetwork {
             inputs = layer.calcOutputs(inputs);
         });
         
-        // the activation function is applied HERE
         return inputs;
     }
 
@@ -251,14 +204,18 @@ class NeuralNetwork {
         return this.maxvalueindex(outputs);
     }
 
-    // takes in DataPoint type
+    apply_all_gradients(learnrate) {
+        this.layers.forEach(layer => {
+            layer.update_gradients(learnrate);
+        });
+    }
 
     // x y should already be normalized
     pointCost(x, y, classification) {
         const outputs = this.CalcOutputs([x, y]);        
         const points = classification === 0 ? weighted_safePoints : weighted_unsafePoints;
         
-        const nearest_point = nearestpoint(x, y, points)
+        const nearest_point = nearestpoint(x, y, points);
         let _cost = 0;
 
 
@@ -267,6 +224,34 @@ class NeuralNetwork {
         }
 
         return _cost;
+    }
+
+    learn(x, y, classification, learnrate) {
+        // lim h->0
+        const h = 0.01;
+        let original_cost = this.pointCost(x, y, classification);
+
+        this.layers.forEach((layer) => {
+            for (let i = 0; i < layer.number_of_outgoing_nodes; i++) {
+                for (let j = 0; j < layer.number_of_nodes_into_the_layer; j++) {
+                    layer.weights[j][i] += h;
+                    let delta_cost = this.pointCost(x, y, classification) - original_cost;
+
+                    layer.cost_gradientW[j][i] = delta_cost / h;
+
+                }
+            }
+
+            for (let i = 0; i < layer.biases.length; i++) {
+                layer.biases[i] += h;
+
+                let delta_cost = this.pointCost(x, y, classification) - original_cost;
+                layer.biases[i] -= h;
+                layer.cost_gradientB[i] = delta_cost / h;
+            }
+        })
+
+        this.apply_all_gradients(learnrate);
     }
 }
 

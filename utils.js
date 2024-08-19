@@ -25,3 +25,10 @@ function nearestpoint(x, y, array_of_points) {
 
   return index_of_point;
 }
+
+async function fetchPoints(points) {
+  const res = await fetch(`http://localhost:3000/${points}`)
+  const body = await res.json();
+      
+  return body;
+}
