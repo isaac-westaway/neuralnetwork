@@ -38,20 +38,30 @@ function draw() {
 
   let classified_points = [];
 
-  needs_redrawing = true;
-  while (needs_redrawing) {
-    for (let x = 0; x < width; x += 5) {
-      for (let y = 0; y < height; y += 3) {
-        x_current = x;
-        y_current = y;
-  
-        x_normalized = normalizeX(x_current);
-        y_normalized = normalizeY(y_current);
-  
-        classified_points.push({ x, y, x_normalized, y_normalized, output });
+  for (let x = 0; x < width; x += 5) {
+    for (let y = 0; y < height; y += 3) {
+      x_current = x;
+      y_current = y;
+
+      x_normalized = normalizeX(x_current);
+      y_normalized = normalizeY(y_current);
+      
+      output = neuralnetwork.classify([x_normalized, y_normalized]);
+
+      classified_points.push({ x, y, x_normalized, y_normalized, output });
+
+      let index = (x + y * width) * 4;
+      if (output === 0) {
+        pixels[index] = 0;
+        pixels[index + 1] = 0;
+        pixels[index + 2] = 255; // blue safe
+      } else {
+        pixels[index] = 255; // red unsafe
+        pixels[index + 1] = 0;
+        pixels[index + 2] = 0;
       }
+      pixels[index + 3] = 255;
     }
-    needs_redrawing = false;
   }
 
   classified_points.forEach((point) => {
@@ -61,28 +71,10 @@ function draw() {
       point.output,
       learnrate
     );
-    needs_redrawing = true;
   });
 
-  output = neuralnetwork.classify([x_normalized, y_normalized])
-  
   // need to make this fire every time the array is re-classified.
-
   updatePixels();
-  classified_points.forEach((point) => {
-    let index = (point.x + point.y * width) * 4;
-    if (output === 0) {
-      pixels[index] = 0;
-      pixels[index + 1] = 0;
-      pixels[index + 2] = 255; // blue safe
-    } else {
-      pixels[index] = 255; // red unsafe
-      pixels[index + 1] = 0;
-      pixels[index + 2] = 0;
-    }
-    pixels[index + 3] = 255;
-
-  });
 
   const calcoutput = neuralnetwork.CalcOutputs([x_normalized, y_normalized]);
   calculated_cost += neuralnetwork.pointCost(
@@ -92,6 +84,8 @@ function draw() {
   );
 
   updatePixels();
+
+  setInterval(redrawer(), 5000);
 
   costLabel.textContent = `Cost: ${calculated_cost}`;
 

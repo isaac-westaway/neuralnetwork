@@ -32,3 +32,9 @@ async function fetchPoints(points) {
       
   return body;
 }
+
+function redrawer() {
+  redraw();
+
+  console.log("redrawing")
+}

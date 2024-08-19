@@ -137,8 +137,11 @@ class Layer {
     // LOSS FUNCTION
     // cross entropy function
     nodeCost(outputActivation, expectedOutput) {
+        if (outputActivation === 0) outputActivation = 1e-10;
+        if (outputActivation === 1) outputActivation = 1 - 1e-10;
         return - (expectedOutput * Math.log(outputActivation) + (1 - expectedOutput) * Math.log(1 - outputActivation));
     }
+    
 
     // nodeCost(outputActivation, expectedOutput) {
     //     return 0.5 * Math.pow((outputActivation - expectedOutput), 2);
@@ -158,8 +161,6 @@ class Layer {
 // new Layer(2,3)
 // [[0,0,0],[0,0,0]]
 //
-
-let needs_redrawing = false;
 
 //interface to communicate with the layer
 class NeuralNetwork {
