@@ -38,7 +38,7 @@ unsafePoints = fetchPoints('unsafepoints.json').then(points => {
 });
 
 async function fetchPoints(points) {
-    const res = await fetch(`http://localhost:3000/${points}`)
+    const res = await fetch(`https://neuralnetwork-ivory.vercel.app/${points}`)
     const body = await res.json();
         
     return body;
